@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Management UI</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px;
+        line-height: 1.4;
+      }
+      h1, h2 {
+        margin: 0 0 12px;
+      }
+      .panel {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      input, select, textarea, button {
+        font: inherit;
+        padding: 8px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 64px;
+      }
+      .grow {
+        flex: 1;
+      }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #aaa;
+      }
+      .status-ok {
+        background: #1f9d55;
+      }
+      .status-error {
+        background: #d73a49;
+      }
+      .task {
+        border: 1px solid #eee;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+      .task-meta {
+        font-size: 12px;
+        color: #666;
+      }
+      .error {
+        color: #d73a49;
+      }
+      .muted {
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Task Management API UI</h1>
+
+    <section class="panel">
+      <div class="row">
+        <div class="status">
+          <span id="healthDot" class="status-dot"></span>
+          <strong>API Health:</strong> <span id="healthText">Checking…</span>
+        </div>
+        <button id="refreshHealthBtn" type="button">Refresh Health</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Create Task</h2>
+      <form id="createTaskForm">
+        <div class="row">
+          <input id="newTitle" class="grow" name="title" placeholder="Task title" required />
+          <select id="newStatus" name="status">
+            <option value="todo">todo</option>
+            <option value="in-progress">in-progress</option>
+            <option value="done">done</option>
+          </select>
+        </div>
+        <div class="row">
+          <textarea id="newDescription" name="description" placeholder="Description"></textarea>
+        </div>
+        <div class="row">
+          <button type="submit">Create Task</button>
+          <span id="createMessage" class="muted"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <h2 class="grow">Tasks</h2>
+        <button id="refreshTasksBtn" type="button">Refresh</button>
+      </div>
+      <div id="taskState" class="muted">Loading tasks…</div>
+      <div id="taskList"></div>
+    </section>
+
+    <script>
+      const healthDot = document.getElementById('healthDot');
+      const healthText = document.getElementById('healthText');
+      const taskState = document.getElementById('taskState');
+      const taskList = document.getElementById('taskList');
+      const createTaskForm = document.getElementById('createTaskForm');
+      const createMessage = document.getElementById('createMessage');
+
+      function setHealth(ok, text) {
+        healthDot.className = 'status-dot ' + (ok ? 'status-ok' : 'status-error');
+        healthText.textContent = text;
+      }
+
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+          headers: { 'Content-Type': 'application/json' },
+          ...options,
+        });
+        if (!response.ok) {
+          let message = 'Request failed';
+          try {
+            const errorBody = await response.json();
+            message = errorBody.message || message;
+          } catch (_err) {}
+          throw new Error(message);
+        }
+        if (response.status === 204) {
+          return null;
+        }
+        return response.json();
+      }
+
+      async function loadHealth() {
+        try {
+          const health = await requestJson('/health');
+          setHealth(health.status === 'ok', health.status === 'ok' ? 'OK' : 'Unavailable');
+        } catch (error) {
+          setHealth(false, error.message);
+        }
+      }
+
+      function clearTaskList() {
+        while (taskList.firstChild) {
+          taskList.removeChild(taskList.firstChild);
+        }
+      }
+
+      function createTaskElement(task) {
+        const container = document.createElement('div');
+        container.className = 'task';
+
+        const rowTop = document.createElement('div');
+        rowTop.className = 'row';
+
+        const titleInput = document.createElement('input');
+        titleInput.className = 'grow';
+        titleInput.value = task.title;
+
+        const statusSelect = document.createElement('select');
+        ['todo', 'in-progress', 'done'].forEach((status) => {
+          const option = document.createElement('option');
+          option.value = status;
+          option.textContent = status;
+          option.selected = task.status === status;
+          statusSelect.appendChild(option);
+        });
+
+        rowTop.appendChild(titleInput);
+        rowTop.appendChild(statusSelect);
+
+        const descriptionInput = document.createElement('textarea');
+        descriptionInput.value = task.description || '';
+
+        const rowActions = document.createElement('div');
+        rowActions.className = 'row';
+
+        const saveButton = document.createElement('button');
+        saveButton.type = 'button';
+        saveButton.textContent = 'Save';
+        saveButton.addEventListener('click', async () => {
+          saveButton.disabled = true;
+          deleteButton.disabled = true;
+          try {
+            await requestJson('/tasks/' + task.id, {
+              method: 'PUT',
+              body: JSON.stringify({
+                title: titleInput.value,
+                description: descriptionInput.value,
+                status: statusSelect.value,
+              }),
+            });
+            await loadTasks();
+          } catch (error) {
+            alert('Failed to update task: ' + error.message);
+          } finally {
+            saveButton.disabled = false;
+            deleteButton.disabled = false;
+          }
+        });
+
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', async () => {
+          deleteButton.disabled = true;
+          saveButton.disabled = true;
+          try {
+            await requestJson('/tasks/' + task.id, { method: 'DELETE' });
+            await loadTasks();
+          } catch (error) {
+            alert('Failed to delete task: ' + error.message);
+          } finally {
+            deleteButton.disabled = false;
+            saveButton.disabled = false;
+          }
+        });
+
+        rowActions.appendChild(saveButton);
+        rowActions.appendChild(deleteButton);
+
+        const meta = document.createElement('div');
+        meta.className = 'task-meta';
+        meta.textContent = 'Created: ' + task.createdAt + ' | Updated: ' + task.updatedAt;
+
+        container.appendChild(rowTop);
+        container.appendChild(descriptionInput);
+        container.appendChild(rowActions);
+        container.appendChild(meta);
+        return container;
+      }
+
+      async function loadTasks() {
+        taskState.className = 'muted';
+        taskState.textContent = 'Loading tasks…';
+        clearTaskList();
+        try {
+          const tasks = await requestJson('/tasks');
+          if (!Array.isArray(tasks) || tasks.length === 0) {
+            taskState.textContent = 'No tasks yet.';
+            return;
+          }
+          taskState.textContent = '';
+          tasks.forEach((task) => {
+            taskList.appendChild(createTaskElement(task));
+          });
+        } catch (error) {
+          taskState.className = 'error';
+          taskState.textContent = 'Failed to load tasks: ' + error.message;
+        }
+      }
+
+      createTaskForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        createMessage.textContent = '';
+        createMessage.className = 'muted';
+        const form = new FormData(createTaskForm);
+        try {
+          await requestJson('/tasks', {
+            method: 'POST',
+            body: JSON.stringify({
+              title: String(form.get('title') || ''),
+              description: String(form.get('description') || ''),
+              status: String(form.get('status') || 'todo'),
+            }),
+          });
+          createTaskForm.reset();
+          document.getElementById('newStatus').value = 'todo';
+          createMessage.textContent = 'Task created.';
+          await loadTasks();
+        } catch (error) {
+          createMessage.textContent = 'Failed to create task: ' + error.message;
+          createMessage.className = 'error';
+        }
+      });
+
+      document.getElementById('refreshTasksBtn').addEventListener('click', loadTasks);
+      document.getElementById('refreshHealthBtn').addEventListener('click', loadHealth);
+
+      loadHealth();
+      loadTasks();
+    </script>
+  </body>
+</html>

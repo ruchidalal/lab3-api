@@ -140,7 +140,9 @@
           try {
             const errorBody = await response.json();
             message = errorBody.message || message;
-          } catch (_err) {}
+          } catch (_err) {
+            // Ignore parse failures and use the fallback message.
+          }
           throw new Error(message);
         }
         if (response.status === 204) {
@@ -162,6 +164,14 @@
         while (taskList.firstChild) {
           taskList.removeChild(taskList.firstChild);
         }
+      }
+
+      function formatDate(value) {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return value;
+        }
+        return parsed.toLocaleString();
       }
 
       function createTaskElement(task) {
@@ -239,7 +249,11 @@
 
         const meta = document.createElement('div');
         meta.className = 'task-meta';
-        meta.textContent = 'Created: ' + task.createdAt + ' | Updated: ' + task.updatedAt;
+        meta.textContent =
+          'Created: ' +
+          formatDate(task.createdAt) +
+          ' | Updated: ' +
+          formatDate(task.updatedAt);
 
         container.appendChild(rowTop);
         container.appendChild(descriptionInput);

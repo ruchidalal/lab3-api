@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab 3 API - Codebase Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    h1 {
+      color: #007acc;
+      border-bottom: 2px solid #007acc;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #444;
+      margin-top: 30px;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .container {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    code {
+      background-color: #f4f4f4;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lab 3 API - Codebase Portal</h1>
+  <p>Welcome to the <strong>Lab 3 Task Management API</strong> project. This page provides direct navigation and links to point to the code files and resources in this repository.</p>
+  
+  <div class="container">
+    <h2>Project Code Navigation</h2>
+    <ul>
+      <li>
+        <strong>GitHub Repository:</strong> <a href="https://github.com/ruchidalal/lab3-api" target="_blank">ruchidalal/lab3-api</a> - The online code repository on GitHub.
+      </li>
+      <li>
+        <strong>Frontend UI:</strong> <a href="./public/index.html">public/index.html</a> - The static single-page application for managing tasks.
+      </li>
+      <li>
+        <strong>Server Configuration:</strong> <a href="./src/app.ts">src/app.ts</a> - The Express app setup including middleware and static routes.
+      </li>
+      <li>
+        <strong>Main Entrypoint:</strong> <a href="./src/index.ts">src/index.ts</a> - The startup script for the server.
+      </li>
+      <li>
+        <strong>API Routes:</strong>
+        <ul>
+          <li><a href="./src/routes/tasks.ts">src/routes/tasks.ts</a> - CRUD operations for tasks (GET, POST, PUT, DELETE).</li>
+          <li><a href="./src/routes/health.ts">src/routes/health.ts</a> - Health check route.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Database Store:</strong> <a href="./src/store/taskStore.ts">src/store/taskStore.ts</a> - In-memory database store for tasks.
+      </li>
+      <li>
+        <strong>Middlewares:</strong>
+        <ul>
+          <li><a href="./src/middleware/errorHandler.ts">src/middleware/errorHandler.ts</a> - Global error and 404 handlers.</li>
+          <li><a href="./src/middleware/validate.ts">src/middleware/validate.ts</a> - Request payload validation middleware.</li>
+          <li><a href="./src/middleware/requestLogger.ts">src/middleware/requestLogger.ts</a> - HTTP request logging middleware.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>API Tests:</strong> <a href="./tests/taskApi.test.ts">tests/taskApi.test.ts</a> - Jest integration tests for all REST endpoints.
+      </li>
+    </ul>
+
+    <h2>How to Run</h2>
+    <p>To run the application locally, use the following commands:</p>
+    <pre><code>npm install
+npm run dev</code></pre>
+    <p>Once running, you can access the frontend UI at <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+  </div>
+</body>
+</html>
